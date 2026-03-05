@@ -13,4 +13,8 @@ A választáshoz 3 gomb áll rendelkezésre.
 
 A menüben való választás után megjelenik a szenzor által mutatott  hőmérséklet/páratartalom adat.
 
+Extra:
+- Millis() használata
+- Checkbutton függvény használata
+
 <img width="952" height="554" alt="image" src="https://github.com/user-attachments/assets/cce0dce0-f5c5-44be-a524-d7b198bc3bd6" />
