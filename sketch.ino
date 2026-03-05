@@ -8,10 +8,30 @@ DHT dht(DHTPIN, DHTTYPE);
 
 LiquidCrystal_I2C lcd(0x27, 16,2);
 
+enum State {
+  STATE_MENU,
+  STATE_DATA
+};
+
+State currentState = STATE_MENU;
+unsigned long dataStartTime = 0;
+
 const int upButton = 2;
 const int downButton = 3;
 const int selectButton = 4;
 
+unsigned long lastDownPressTime = 0;
+unsigned long lastUpPressTime = 0;
+unsigned long lastSelectPressTime = 0;
+unsigned long debounce = 50;
+
+bool lastDownState = HIGH;
+bool lastUpState = HIGH;
+bool lastSelectState = HIGH;
+
+bool stableStateForDown = HIGH;
+bool stableStateForUp = HIGH;
+bool stableStateForSelect = HIGH;
 
 int menu = 1;
 const int maxmenu = 2;
@@ -31,34 +51,90 @@ void setup() {
 }
 
 void loop() {
+   bool actualDownState = digitalRead(downButton);
 
+   if (actualDownState != lastDownState)
+   {
+      lastDownPressTime = millis();
+   }
 
-  if ( !digitalRead(downButton))
-  {
-    menu++;
-    if ( menu > maxmenu)
-      menu = 1;
+   if((millis() - lastDownPressTime) > debounce)
+   {
+    if(actualDownState !=  stableStateForDown)
+    {
+      stableStateForDown = actualDownState;
 
-    updatemenu();
-    delay(2000);
-  }
+      if( stableStateForDown == LOW )
+      {
+        menu++;
+        if ( menu > maxmenu)
+            menu = 1;
+            
+        updatemenu();
+      }
+    }
+   }
 
-  if ( !digitalRead(upButton))
-  {
-    menu--;
-    if ( menu < 1)
-      menu = maxmenu;
+   bool actualUpState = digitalRead(upButton);
 
-    updatemenu();
-    delay(2000);
-  }
+   if( actualUpState !=  lastUpState)
+   {
+    lastUpPressTime = millis();
+   }
 
-  if( !digitalRead(selectButton))
-  {
-    executionAction();
-    delay(2000);
-  }
+   if ( (millis()-lastUpPressTime) > debounce)
+   {
+    if( actualUpState != stableStateForUp)
+    {
+      stableStateForUp = actualUpState;
 
+      if( stableStateForUp == LOW && currentState == STATE_MENU )
+      {
+        menu--;
+        if ( menu < 1)
+             menu = maxmenu;
+        
+        updatemenu();
+      }
+    }
+   }
+
+   bool actualSelectState = digitalRead(selectButton);
+
+   if( actualSelectState != lastSelectState)
+   {
+    lastSelectPressTime = millis();
+   }
+
+   if( (millis() - lastSelectPressTime) > debounce )
+   {
+    if( actualSelectState !=  stableStateForSelect)
+    {
+      stableStateForSelect = actualSelectState;
+
+      if( stableStateForSelect == LOW && currentState == STATE_MENU )
+      {
+        executionAction();
+        //delay(2000);
+
+        currentState = STATE_DATA;
+        dataStartTime = millis();
+      }
+    }
+   }
+
+   if( currentState == STATE_DATA)
+   {
+    if( (millis() - dataStartTime) > 2000 )
+    {
+      currentState = STATE_MENU;
+      updatemenu();
+    }
+   }
+
+   lastUpState = actualUpState;
+   lastDownState = actualDownState;
+   lastSelectState = actualSelectState;
 }
 
 void updatemenu() {
@@ -82,7 +158,7 @@ void executionAction()
   float temperature = dht.readTemperature();
   float humidity = dht.readHumidity();
 
-  if (isnan(temperature)) {
+  if (isnan(temperature) || isnan(humidity)) {
     Serial.println("Szenzor hiba!");
     return;
   }
