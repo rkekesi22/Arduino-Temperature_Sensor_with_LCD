@@ -51,90 +51,43 @@ void setup() {
 }
 
 void loop() {
-   bool actualDownState = digitalRead(downButton);
 
-   if (actualDownState != lastDownState)
-   {
-      lastDownPressTime = millis();
-   }
-
-   if((millis() - lastDownPressTime) > debounce)
-   {
-    if(actualDownState !=  stableStateForDown)
-    {
-      stableStateForDown = actualDownState;
-
-      if( stableStateForDown == LOW )
-      {
-        menu++;
-        if ( menu > maxmenu)
+  //Down
+  if( checkButton(downButton,lastDownState,stableStateForDown,lastDownPressTime,debounce) && currentState == STATE_MENU)
+  {
+      menu++;
+      if ( menu > maxmenu)
             menu = 1;
             
-        updatemenu();
-      }
-    }
-   }
+      updatemenu();
+  }
 
-   bool actualUpState = digitalRead(upButton);
-
-   if( actualUpState !=  lastUpState)
-   {
-    lastUpPressTime = millis();
-   }
-
-   if ( (millis()-lastUpPressTime) > debounce)
-   {
-    if( actualUpState != stableStateForUp)
-    {
-      stableStateForUp = actualUpState;
-
-      if( stableStateForUp == LOW && currentState == STATE_MENU )
-      {
-        menu--;
+  //Up
+  if( checkButton(upButton,lastUpState,stableStateForUp,lastUpPressTime,debounce) && currentState == STATE_MENU)
+  {
+      menu--;
         if ( menu < 1)
              menu = maxmenu;
         
         updatemenu();
-      }
-    }
-   }
+  }
 
-   bool actualSelectState = digitalRead(selectButton);
-
-   if( actualSelectState != lastSelectState)
-   {
-    lastSelectPressTime = millis();
-   }
-
-   if( (millis() - lastSelectPressTime) > debounce )
-   {
-    if( actualSelectState !=  stableStateForSelect)
-    {
-      stableStateForSelect = actualSelectState;
-
-      if( stableStateForSelect == LOW && currentState == STATE_MENU )
-      {
-        executionAction();
-        //delay(2000);
-
-        currentState = STATE_DATA;
-        dataStartTime = millis();
-      }
-    }
-   }
-
-   if( currentState == STATE_DATA)
-   {
+  //Select
+  if( checkButton(selectButton,lastSelectState,stableStateForSelect,lastSelectPressTime,debounce) )
+  {
+    executionAction();
+    currentState = STATE_DATA;
+    dataStartTime = millis();
+  }
+   
+  if( currentState == STATE_DATA)
+  {
     if( (millis() - dataStartTime) > 2000 )
     {
       currentState = STATE_MENU;
       updatemenu();
     }
    }
-
-   lastUpState = actualUpState;
-   lastDownState = actualDownState;
-   lastSelectState = actualSelectState;
 }
 
 void updatemenu() {
@@ -179,3 +132,36 @@ void executionAction()
       break;
   }
 }
+
+bool checkButton( int pin, 
+bool &lastRead, 
+bool &stableState, 
+unsigned long &lastChange, 
+unsigned long debounceTime)
+{
+  bool reading = digitalRead(pin);
+
+   if( reading !=  lastRead)
+   {
+    lastChange = millis();
+   }
+
+   if ( (millis()-lastChange) > debounceTime)
+   {
+    if( reading != stableState)
+    {
+      stableState = reading;
+
+      if( stableState == LOW )
+      {
+        lastRead = reading;
+        return true;
+      }
+    }
+   }
+
+   lastRead = reading;
+   return false;
+
+}
+
