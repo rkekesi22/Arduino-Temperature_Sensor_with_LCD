@@ -16,5 +16,6 @@ A menüben való választás után megjelenik a szenzor által mutatott  hőmér
 Extra:
 - Millis() használata
 - Checkbutton függvény használata
+- Összetett adattípus (struct) használata a pin, lastRead, stableState, lastChange változók helyettesítésére. Így a kód sokkal átláthatóbb
 
 <img width="952" height="554" alt="image" src="https://github.com/user-attachments/assets/cce0dce0-f5c5-44be-a524-d7b198bc3bd6" />
