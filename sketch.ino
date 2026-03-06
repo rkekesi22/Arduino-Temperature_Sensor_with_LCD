@@ -13,33 +13,29 @@ enum State {
   STATE_DATA
 };
 
+struct Button {
+  uint8_t pin;
+  bool lastRead;
+  bool stableState;
+  unsigned long lastChange;
+};
+
+Button btnUp = {2, HIGH, HIGH, 0};
+Button btnDown = {3, HIGH, HIGH, 0};
+Button btnSelect = {4, HIGH, HIGH, 0};
+
 State currentState = STATE_MENU;
 unsigned long dataStartTime = 0;
 
-const int upButton = 2;
-const int downButton = 3;
-const int selectButton = 4;
-
-unsigned long lastDownPressTime = 0;
-unsigned long lastUpPressTime = 0;
-unsigned long lastSelectPressTime = 0;
 unsigned long debounce = 50;
-
-bool lastDownState = HIGH;
-bool lastUpState = HIGH;
-bool lastSelectState = HIGH;
-
-bool stableStateForDown = HIGH;
-bool stableStateForUp = HIGH;
-bool stableStateForSelect = HIGH;
 
 int menu = 1;
 const int maxmenu = 2;
 
 void setup() {
-  pinMode(upButton, INPUT_PULLUP);
-  pinMode(downButton, INPUT_PULLUP);
-  pinMode(selectButton, INPUT_PULLUP);
+  pinMode(btnUp.pin, INPUT_PULLUP);
+  pinMode(btnDown.pin, INPUT_PULLUP);
+  pinMode(btnSelect.pin, INPUT_PULLUP);
 
   lcd.init();
   lcd.backlight();
@@ -53,7 +49,7 @@ void setup() {
 void loop() {
 
   //Down
-  if( checkButton(downButton,lastDownState,stableStateForDown,lastDownPressTime,debounce) && currentState == STATE_MENU)
+  if( checkButton(btnDown,debounce) && currentState == STATE_MENU)
   {
       menu++;
       if ( menu > maxmenu)
@@ -63,7 +59,7 @@ void loop() {
   }
 
   //Up
-  if( checkButton(upButton,lastUpState,stableStateForUp,lastUpPressTime,debounce) && currentState == STATE_MENU)
+  if( checkButton(btnUp,debounce) && currentState == STATE_MENU)
   {
       menu--;
         if ( menu < 1)
@@ -73,7 +69,7 @@ void loop() {
   }
 
   //Select
-  if( checkButton(selectButton,lastSelectState,stableStateForSelect,lastSelectPressTime,debounce) )
+  if( checkButton(btnSelect,debounce) )
   {
     executionAction();
     currentState = STATE_DATA;
@@ -133,34 +129,31 @@ void executionAction()
   }
 }
 
-bool checkButton( int pin, 
-bool &lastRead, 
-bool &stableState, 
-unsigned long &lastChange, 
+bool checkButton( Button &button,
 unsigned long debounceTime)
 {
-  bool reading = digitalRead(pin);
+  bool reading = digitalRead(button.pin);
 
-   if( reading !=  lastRead)
+   if( reading !=  button.lastRead)
    {
-    lastChange = millis();
+    button.lastChange = millis();
    }
 
-   if ( (millis()-lastChange) > debounceTime)
+   if ( (millis()-button.lastChange) > debounceTime)
    {
-    if( reading != stableState)
+    if( reading != button.stableState)
     {
-      stableState = reading;
+      button.stableState = reading;
 
-      if( stableState == LOW )
+      if( button.stableState == LOW )
       {
-        lastRead = reading;
+        button.lastRead = reading;
         return true;
       }
     }
    }
 
-   lastRead = reading;
+   button.lastRead = reading;
    return false;
 
 }
